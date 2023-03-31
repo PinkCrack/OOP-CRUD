@@ -7,6 +7,7 @@ import javafx.collections.ObservableList;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
+import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.control.*;
 import javafx.scene.control.cell.PropertyValueFactory;
@@ -182,6 +183,7 @@ public class MainController implements Initializable {
         buttonsHBox.setSpacing(150);
         buttonsHBox.getChildren().addAll(actionButton, backButton);
         buttonsHBox.setAlignment(Pos.CENTER);
+        buttonsHBox.setStyle("-fx-padding: 0 0 25px 0");
 
         actionButton.setPrefWidth(BUTTON_WIDTH);
         actionButton.setOnAction(this::actionButtonOnAction);
