@@ -1,23 +1,41 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
 <?import javafx.scene.control.Button?>
+<?import javafx.scene.control.Menu?>
+<?import javafx.scene.control.MenuBar?>
+<?import javafx.scene.control.MenuItem?>
 <?import javafx.scene.control.ScrollPane?>
 <?import javafx.scene.control.TableColumn?>
 <?import javafx.scene.control.TableView?>
 <?import javafx.scene.layout.AnchorPane?>
 
-<AnchorPane fx:id="mainPane" maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="370.0" prefWidth="501.0" xmlns="http://javafx.com/javafx/19" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.example.oopcrud.MainController">
+<AnchorPane fx:id="mainPane" maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="375.0" prefWidth="500.0" xmlns="http://javafx.com/javafx/19" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.example.oopcrud.MainController">
    <children>
-      <TableView fx:id="transportTableView" layoutX="24.0" layoutY="19.0" prefHeight="276.0" prefWidth="454.0">
+      <TableView fx:id="transportTableView" layoutX="24.0" layoutY="40.0" prefHeight="276.0" prefWidth="454.0">
         <columns>
           <TableColumn fx:id="numberTableColumn" prefWidth="44.0" text="№" />
           <TableColumn fx:id="typeTabelColumn" prefWidth="167.0" text="Тип" />
             <TableColumn fx:id="vinTableColumn" prefWidth="238.0" text="VIN" />
         </columns>
       </TableView>
-      <Button fx:id="addButton" layoutX="42.0" layoutY="316.0" mnemonicParsing="false" onAction="#onAddButtonClick" prefHeight="30.0" prefWidth="98.0" text="Добавить" />
-      <Button fx:id="editButton" layoutX="261.0" layoutY="316.0" mnemonicParsing="false" onAction="#onEditButtonClick" prefHeight="30.0" prefWidth="98.0" text="Редактировать" />
-      <Button fx:id="deleteButton" layoutX="370.0" layoutY="316.0" mnemonicParsing="false" onAction="#onDeleteButtonClick" prefHeight="30.0" prefWidth="98.0" text="Удалить" />
+      <Button fx:id="addButton" layoutX="42.0" layoutY="331.0" mnemonicParsing="false" onAction="#onAddButtonClick" prefHeight="30.0" prefWidth="98.0" text="Добавить" />
+      <Button fx:id="editButton" layoutX="262.0" layoutY="331.0" mnemonicParsing="false" onAction="#onEditButtonClick" prefHeight="30.0" prefWidth="98.0" text="Редактировать" />
+      <Button fx:id="deleteButton" layoutX="370.0" layoutY="331.0" mnemonicParsing="false" onAction="#onDeleteButtonClick" prefHeight="30.0" prefWidth="98.0" text="Удалить" />
       <ScrollPane fx:id="controlsScrollPane" layoutX="153.0" layoutY="313.0" prefHeight="36.0" prefWidth="98.0" visible="false" />
+      <MenuBar fx:id="menuBar" prefHeight="25.0" prefWidth="501.0">
+        <menus>
+          <Menu mnemonicParsing="false" text="File">
+               <items>
+                  <MenuItem fx:id="openMenuItem" mnemonicParsing="false" onAction="#onOpenMenuItemClick" text="Открыть" />
+                  <MenuItem fx:id="saveMenuItem" mnemonicParsing="false" onAction="#onSaveMenuItemClick" text="Сохранить" />
+               </items>
+          </Menu>
+          <Menu mnemonicParsing="false" text="Help">
+            <items>
+              <MenuItem fx:id="helpMenuItem" mnemonicParsing="false" text="About" />
+            </items>
+          </Menu>
+        </menus>
+      </MenuBar>
    </children>
 </AnchorPane>
