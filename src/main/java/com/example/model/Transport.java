@@ -1,11 +1,12 @@
 package com.example.model;
 
-
 import com.example.annotation.FieldInformation;
 import com.example.annotation.GetMethod;
 import com.example.annotation.SetMethod;
 
-public abstract class Transport {
+import java.io.Serializable;
+
+public abstract class Transport implements Serializable {
     @FieldInformation(name = "Цвет", type = "TransportColor")
     private TransportColor color;
     @FieldInformation(name = "Количество колес", type = "Integer")

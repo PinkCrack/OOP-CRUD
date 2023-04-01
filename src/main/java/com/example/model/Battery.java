@@ -4,7 +4,9 @@ import com.example.annotation.FieldInformation;
 import com.example.annotation.GetMethod;
 import com.example.annotation.SetMethod;
 
-public class Battery {
+import java.io.Serializable;
+
+public class Battery implements Serializable {
     @FieldInformation(name = "Потребление энергии", type = "Integer")
     private int energyConsumption;
 

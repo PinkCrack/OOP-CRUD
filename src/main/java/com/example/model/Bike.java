@@ -5,10 +5,11 @@ import com.example.annotation.GetMethod;
 import com.example.annotation.SetMethod;
 
 public class Bike extends Transport {
+
     @FieldInformation(name = "Диаметр колес", type = "Double")
-    public double wheelsDiameter;
+    private double wheelsDiameter;
     @FieldInformation(name = "Тип велосипеда", type = "BikeType")
-    public BikeType bikeType;
+    private BikeType bikeType;
 
     public Bike() {
 
