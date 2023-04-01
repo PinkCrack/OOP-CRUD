@@ -2,19 +2,26 @@ package com.example.oopcrud;
 
 import com.example.factories.*;
 import com.example.model.*;
+import com.example.serialization.BinarySerializer;
+import com.example.serialization.Serializer;
+import com.example.serialization.factory.BinarySerializerFactory;
+import com.example.serialization.factory.JsonSerializerFactory;
+import com.example.serialization.factory.SerializerFactory;
+import com.example.serialization.factory.TextSerializerFactory;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
-import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.control.*;
 import javafx.scene.control.cell.PropertyValueFactory;
 import javafx.scene.layout.AnchorPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
+import javafx.stage.FileChooser;
 
+import java.io.File;
 import java.net.URL;
 import java.util.*;
 
@@ -29,16 +36,21 @@ public class MainController implements Initializable {
     @FXML
     public TableColumn<DataTransport, String> vinTableColumn;
     @FXML
+    public MenuItem helpMenuItem;
+    @FXML
+    public MenuItem saveMenuItem;
+    @FXML
+    public MenuItem openMenuItem;
+    @FXML
     private ScrollPane controlsScrollPane;
     @FXML
     private Button addButton;
-
     @FXML
     private Button deleteButton;
-
     @FXML
     private Button editButton;
-
+    @FXML
+    private MenuBar menuBar;
     @FXML
     private TableView<DataTransport> transportTableView;
 
@@ -51,7 +63,7 @@ public class MainController implements Initializable {
     private Button backButton = new Button("Назад");
 
     private final double PANE_WIDTH = 500;
-    private final double PANE_HEIGHT = 370;
+    private final double PANE_HEIGHT = 375;
 
     private final double BUTTON_WIDTH = 110;
 
@@ -61,20 +73,26 @@ public class MainController implements Initializable {
     private final String GASOLINE_CAR = "GasolineCar";
     private final HashMap<String, TransportFactory> transportFactoryMap = new HashMap<>();
 
-    private final ArrayList<Transport> listOfTransport = new ArrayList<>();
+    private final String JSON_EXTENSION = ".json";
+    private final String BINARY_EXTENSION = ".bin";
+    private final String TEXT_EXTENSION = ".txt";
+    private final HashMap<String, SerializerFactory> serializerFactoryMap = new HashMap<>();
+
+    private ArrayList<Transport> listOfTransport = new ArrayList<>();
 
     private ObservableList<DataTransport> tableList = FXCollections.observableArrayList();
 
     @Override
     public void initialize(URL url, ResourceBundle resourceBundle) {
+        initializeTable();
+        initializeTransportFactoryMap();
+        initializeSerializeFactoryMap();
+        initializeControls();
+        initializeScrollPane();
         numberTableColumn.setCellValueFactory(new PropertyValueFactory<DataTransport, Integer>("number"));
         typeTabelColumn.setCellValueFactory(new PropertyValueFactory<DataTransport, String>("type"));
         vinTableColumn.setCellValueFactory(new PropertyValueFactory<DataTransport, String>("vin"));
         transportTableView.setItems(tableList);
-        initializeTable();
-        initializeTransportFactoryMap();
-        initializeControls();
-        initializeScrollPane();
         comboBox.getItems().addAll(BIKE, BUS, ELECTRIC_CAR, GASOLINE_CAR);
     }
 
@@ -84,11 +102,14 @@ public class MainController implements Initializable {
         infoLabel.setText("Создание объекта");
         comboBox.setDisable(false);
         controlsScrollPane.setVisible(true);
+        menuBar.setVisible(false);
+        actionButton.setVisible(false);
     }
 
     @FXML
     private void onEditButtonClick(ActionEvent event) {
         if (transportTableView.getSelectionModel().getSelectedItem() != null) {
+            menuBar.setVisible(false);
             actionButton.setText("Редактировать");
             infoLabel.setText("Редактирование объекта");
 
@@ -120,11 +141,55 @@ public class MainController implements Initializable {
         }
     }
 
+    @FXML
+    private void onOpenMenuItemClick(ActionEvent event) {
+        FileChooser fileChooser = new FileChooser();
+        fileChooser.getExtensionFilters().add(new FileChooser.ExtensionFilter("Serializer's extensions (*.txt, *.json, *.bin)", "*.txt", "*.json", "*.bin"));
+        File openFile = fileChooser.showOpenDialog(content.getScene().getWindow());
+        if (openFile != null) {
+            if (openFile.getName().endsWith(BINARY_EXTENSION) || openFile.getName().endsWith(JSON_EXTENSION)
+                    || openFile.getName().endsWith(TEXT_EXTENSION)) {
+
+                String[] substrings = openFile.getName().split("\\.");
+                SerializerFactory serializerFactory = serializerFactoryMap.get("." + substrings[substrings.length - 1]);
+                Serializer serializer = serializerFactory.createSerializer();
+                listOfTransport = serializer.deserialize(openFile);
+                tableList.clear();
+                if (listOfTransport != null) {
+                    for (Transport transport : listOfTransport) {
+                        tableList.add(new DataTransport(tableList.size() + 1, transport.getClass().getSimpleName(), transport.getVin()));
+                    }
+                }
+            }
+        }
+    }
+
+    @FXML
+    private void onSaveMenuItemClick(ActionEvent event) {
+        FileChooser fileChooser = new FileChooser();
+        fileChooser.getExtensionFilters().add(new FileChooser.ExtensionFilter("Serializer's extension (*.txt)", "*.txt"));
+        fileChooser.getExtensionFilters().add(new FileChooser.ExtensionFilter("Serializer's extension (*.json)", "*.json"));
+        fileChooser.getExtensionFilters().add(new FileChooser.ExtensionFilter("Serializer's extension (*.bin)", "*.bin"));
+        File saveFile = fileChooser.showSaveDialog(content.getScene().getWindow());
+        if (saveFile != null) {
+            if (saveFile.getName().endsWith(BINARY_EXTENSION) || saveFile.getName().endsWith(JSON_EXTENSION)
+                        || saveFile.getName().endsWith(TEXT_EXTENSION)) {
+
+                String[] substrings = saveFile.getName().split("\\.");
+                SerializerFactory serializerFactory = serializerFactoryMap.get("." + substrings[substrings.length - 1]);
+                Serializer serializer = serializerFactory.createSerializer();
+                serializer.serialize(saveFile, listOfTransport);
+            }
+        }
+    }
+
+    @FXML
     private void comboBoxOnAction(ActionEvent event) {
         if (!Objects.equals(comboBox.getValue(), "")) {
             TransportFactory transportFactory = transportFactoryMap.get(comboBox.getValue());
             HBox transportControls = transportFactory.render();
             content.getChildren().set(content.getChildren().size() - 2, transportControls);
+            actionButton.setVisible(true);
         }
     }
 
@@ -152,14 +217,17 @@ public class MainController implements Initializable {
             }
             comboBox.setValue("");
             controlsScrollPane.setVisible(false);
+            menuBar.setVisible(true);
             content.getChildren().set(content.getChildren().size() - 2, this.controlsHBox);
         }
     }
 
     private void backButtonOnAction(ActionEvent event) {
         comboBox.setValue("");
+        menuBar.setVisible(true);
         controlsScrollPane.setVisible(false);
         content.getChildren().set(content.getChildren().size() - 2, controlsHBox);
+        actionButton.setVisible(true);
     }
 
     private void initializeTable() {
@@ -195,6 +263,12 @@ public class MainController implements Initializable {
         content.setAlignment(Pos.CENTER);
         content.setSpacing(20);
         content.getChildren().addAll(infoLabel, comboBox, controlsHBox, buttonsHBox);
+    }
+
+    private void initializeSerializeFactoryMap() {
+        serializerFactoryMap.put(BINARY_EXTENSION, new BinarySerializerFactory());
+        serializerFactoryMap.put(JSON_EXTENSION, new JsonSerializerFactory());
+        serializerFactoryMap.put(TEXT_EXTENSION, new TextSerializerFactory());
     }
 
     private void initializeTransportFactoryMap() {
