@@ -55,11 +55,11 @@ public abstract class TransportFactory {
         VBox controlsBox = (VBox) controlsHBox.getChildren().get(1);
         ObservableList<Node> listOfLabels = labelsVBox.getChildren();
         ObservableList<Node> listOfControls = controlsBox.getChildren();
-
         Class<?> usedClass = transport.getClass();
-        while (!usedClass.getSimpleName().equalsIgnoreCase("Object")) {
+        try {
             getValuesFromObject(usedClass, transport, listOfLabels, listOfControls);
-            usedClass = usedClass.getSuperclass();
+        } catch (InvocationTargetException | IllegalAccessException e) {
+            throw new RuntimeException(e);
         }
     }
 
@@ -69,9 +69,10 @@ public abstract class TransportFactory {
         ObservableList<Node> listOfLabels = labelsVBox.getChildren();
         ObservableList<Node> listOfControls = controlsBox.getChildren();
         Class<?> usedClass = transport.getClass();
-        while (!usedClass.getSimpleName().equalsIgnoreCase("Object")) {
+        try {
             setValuesToObject(usedClass, transport, listOfLabels, listOfControls);
-            usedClass = usedClass.getSuperclass();
+        } catch (InvocationTargetException | IllegalAccessException | NoSuchMethodException | InstantiationException e) {
+            throw new RuntimeException(e);
         }
     }
 
@@ -84,11 +85,8 @@ public abstract class TransportFactory {
         ObservableList<Node> listOfControls = controlsBox.getChildren();
         Transport transport = createTransport();
         Class<?> usedClass = transport.getClass();
-        while (!usedClass.getSimpleName().equalsIgnoreCase("Object")) {
-            if (!checkValues(usedClass, listOfLabels, listOfControls)) {
-                isCorrect = false;
-            }
-            usedClass = usedClass.getSuperclass();
+        if (!checkValues(usedClass, listOfLabels, listOfControls)) {
+            isCorrect = false;
         }
         return isCorrect;
     }
@@ -164,7 +162,7 @@ public abstract class TransportFactory {
     }
 
     private void getValuesFromObject(Class<?> usedClass, Object transport, ObservableList<Node> listOfLabels,
-                                     ObservableList<Node> listOfControls) {
+                                     ObservableList<Node> listOfControls) throws InvocationTargetException, IllegalAccessException {
         Method[] methods = usedClass.getMethods();
         GetMethod getMethod;
         String name;
@@ -177,47 +175,43 @@ public abstract class TransportFactory {
                     label = (Label) listOfLabels.get(i);
                     if (label.getText().trim().equals(name)) {
                         Class<?> parameterType = method.getReturnType();
-                        try {
-                            if (!parameterType.isEnum()) {
-                                switch (getMethod.returnType()) {
-                                    case "Double" -> {
-                                        TextField textField = (TextField) listOfControls.get(i);
-                                        textField.setText(Double.toString((Double) method.invoke(transport)));
-                                    }
-                                    case "Integer" -> {
-                                        TextField textField = (TextField) listOfControls.get(i);
-                                        textField.setText(Integer.toString((Integer) method.invoke(transport)));
-                                    }
-                                    case "String" -> {
-                                        TextField textField = (TextField) listOfControls.get(i);
-                                        textField.setText((String) method.invoke(transport));
-                                        if (label.getText().trim().equals("VIN")) {
-                                            textField.setDisable(true);
-                                        }
-                                    }
-                                    case "Boolean" -> {
-                                        CheckBox checkBox = (CheckBox) listOfControls.get(i);
-                                        checkBox.setSelected((Boolean) method.invoke(transport));
-                                    }
-                                    default -> {
-                                        Object object = method.invoke(transport);
-                                        getValuesFromObject(parameterType, object, listOfLabels, listOfControls);
+                        if (!parameterType.isEnum()) {
+                            switch (getMethod.returnType()) {
+                                case "Double" -> {
+                                    TextField textField = (TextField) listOfControls.get(i);
+                                    textField.setText(Double.toString((Double) method.invoke(transport)));
+                                }
+                                case "Integer" -> {
+                                    TextField textField = (TextField) listOfControls.get(i);
+                                    textField.setText(Integer.toString((Integer) method.invoke(transport)));
+                                }
+                                case "String" -> {
+                                    TextField textField = (TextField) listOfControls.get(i);
+                                    textField.setText((String) method.invoke(transport));
+                                    if (label.getText().trim().equals("VIN")) {
+                                        textField.setDisable(true);
                                     }
                                 }
-                            } else {
-                                ComboBox comboBox = (ComboBox) listOfControls.get(i);
-                                Field[] fields = parameterType.getFields();
-
-                                EnumInformation enumInformation;
-                                for (Field field : fields) {
-                                    enumInformation = field.getAnnotation(EnumInformation.class);
-                                    if (method.invoke(transport).equals(field.get(parameterType))) {
-                                        comboBox.setValue(enumInformation.name());
-                                    }
+                                case "Boolean" -> {
+                                    CheckBox checkBox = (CheckBox) listOfControls.get(i);
+                                    checkBox.setSelected((Boolean) method.invoke(transport));
+                                }
+                                default -> {
+                                    Object object = method.invoke(transport);
+                                    getValuesFromObject(parameterType, object, listOfLabels, listOfControls);
                                 }
                             }
-                        } catch (InvocationTargetException | IllegalAccessException e) {
-                            throw new RuntimeException(e);
+                        } else {
+                            ComboBox comboBox = (ComboBox) listOfControls.get(i);
+                            Field[] fields = parameterType.getFields();
+
+                            EnumInformation enumInformation;
+                            for (Field field : fields) {
+                                enumInformation = field.getAnnotation(EnumInformation.class);
+                                if (method.invoke(transport).equals(field.get(parameterType))) {
+                                    comboBox.setValue(enumInformation.name());
+                                }
+                            }
                         }
                     }
                 }
@@ -226,7 +220,8 @@ public abstract class TransportFactory {
     }
 
     private void setValuesToObject(Class<?> usedClass, Object transport, ObservableList<Node> listOfLabels,
-                                   ObservableList<Node> listOfControls) {
+                                   ObservableList<Node> listOfControls) throws InvocationTargetException,
+                                   IllegalAccessException, NoSuchMethodException, InstantiationException {
         Method[] methods = usedClass.getMethods();
         SetMethod setMethod;
         String name;
@@ -238,45 +233,41 @@ public abstract class TransportFactory {
                     Label label = (Label) listOfLabels.get(i);
                     if (label.getText().trim().equals(name)) {
                         Class<?> parameterType = method.getParameterTypes()[0];
-                        try {
-                            if (!parameterType.isEnum()) {
-                                switch (setMethod.typeParameter()) {
-                                    case "Integer" -> {
-                                        TextField textField = (TextField) listOfControls.get(i);
-                                        method.invoke(transport, Integer.parseInt(textField.getText()));
-                                    }
-                                    case "String" -> {
-                                        TextField textField = (TextField) listOfControls.get(i);
-                                        method.invoke(transport, textField.getText());
-                                    }
-                                    case "Double" -> {
-                                        TextField textField = (TextField) listOfControls.get(i);
-                                        method.invoke(transport, Double.parseDouble(textField.getText()));
-                                    }
-                                    case "Boolean" -> {
-                                        CheckBox checkBox = (CheckBox) listOfControls.get(i);
-                                        method.invoke(transport, checkBox.isSelected());
-                                    }
-                                    default -> {
-                                        Class[] types = null;
-                                        Object object = parameterType.getConstructor(types).newInstance();
-                                        setValuesToObject(parameterType, object, listOfLabels, listOfControls);
-                                        method.invoke(transport, object);
-                                    }
+                        if (!parameterType.isEnum()) {
+                            switch (setMethod.typeParameter()) {
+                                case "Integer" -> {
+                                    TextField textField = (TextField) listOfControls.get(i);
+                                    method.invoke(transport, Integer.parseInt(textField.getText()));
                                 }
-                            } else {
-                                ComboBox comboBox = (ComboBox) listOfControls.get(i);
-                                Field[] fields = parameterType.getFields();
-                                EnumInformation enumInformation;
-                                for (Field field : fields) {
-                                    enumInformation = field.getAnnotation(EnumInformation.class);
-                                    if (enumInformation.name().equals((String)comboBox.getValue())) {
-                                        method.invoke(transport, field.get(parameterType));
-                                    }
+                                case "String" -> {
+                                    TextField textField = (TextField) listOfControls.get(i);
+                                    method.invoke(transport, textField.getText());
+                                }
+                                case "Double" -> {
+                                    TextField textField = (TextField) listOfControls.get(i);
+                                    method.invoke(transport, Double.parseDouble(textField.getText()));
+                                }
+                                case "Boolean" -> {
+                                    CheckBox checkBox = (CheckBox) listOfControls.get(i);
+                                    method.invoke(transport, checkBox.isSelected());
+                                }
+                                default -> {
+                                    Class[] types = null;
+                                    Object object = parameterType.getConstructor(types).newInstance();
+                                    setValuesToObject(parameterType, object, listOfLabels, listOfControls);
+                                    method.invoke(transport, object);
                                 }
                             }
-                        } catch (InvocationTargetException | IllegalAccessException | NoSuchMethodException | InstantiationException e) {
-                            throw new RuntimeException(e);
+                        } else {
+                            ComboBox comboBox = (ComboBox) listOfControls.get(i);
+                            Field[] fields = parameterType.getFields();
+                            EnumInformation enumInformation;
+                            for (Field field : fields) {
+                                enumInformation = field.getAnnotation(EnumInformation.class);
+                                if (enumInformation.name().equals((String)comboBox.getValue())) {
+                                    method.invoke(transport, field.get(parameterType));
+                                }
+                            }
                         }
                     }
                 }
@@ -286,40 +277,60 @@ public abstract class TransportFactory {
 
     private boolean checkValues(Class<?> usedClass, ObservableList<Node> listOfLabels,
                              ObservableList<Node> listOfControls) {
-        Field[] fields = usedClass.getDeclaredFields();
-        FieldInformation annotation;
+        Method[] methods = usedClass.getMethods();
+        GetMethod annotation;
         String name;
         boolean isCorrect = true;
-        for (Field field : fields) {
-            annotation = field.getAnnotation(FieldInformation.class);
+        for (Method method : methods) {
+            annotation = method.getAnnotation(GetMethod.class);
             if (annotation != null) {
                 name = annotation.name();
                 for (int i = 0; i < listOfLabels.size(); i++) {
                     Label label = (Label) listOfLabels.get(i);
                     if (label.getText().trim().equals(name)) {
-                        switch (annotation.type()) {
-                            case "Integer" -> {
-                                TextField textField = (TextField) listOfControls.get(i);
-                                if (textField.getText().matches("[1-9]\\d*")) {
-                                    textField.setStyle("");
-                                } else {
-                                    textField.setStyle("-fx-border-color: red");
-                                    isCorrect = false;
+                        Class<?> parameterType = method.getReturnType();
+                        if (!parameterType.isEnum()) {
+                            switch (annotation.returnType()) {
+                                case "Integer" -> {
+                                    TextField textField = (TextField) listOfControls.get(i);
+                                    if (textField.getText().matches("[1-9]\\d*")) {
+                                        textField.setStyle("");
+                                    } else {
+                                        textField.setStyle("-fx-border-color: red");
+                                        isCorrect = false;
+                                    }
+                                }
+                                case "Double" -> {
+                                    TextField textField = (TextField) listOfControls.get(i);
+                                    if (textField.getText().matches("[1-9]\\d*(\\.\\d+)?")) {
+                                        textField.setStyle("");
+                                    } else {
+                                        textField.setStyle("-fx-border-color: red");
+                                        isCorrect = false;
+                                    }
+                                }
+                                case "String" -> {
+                                    TextField textField = (TextField) listOfControls.get(i);
+                                    if (textField.getText().matches("\\s*")) {
+                                        textField.setStyle("-fx-border-color: red");
+                                        isCorrect = false;
+                                    } else {
+                                        textField.setStyle("");
+                                    }
+                                }
+                                default -> {
+                                    if (!checkValues(parameterType, listOfLabels, listOfControls)) {
+                                        isCorrect = false;
+                                    }
                                 }
                             }
-                            case "Double" -> {
-                                TextField textField = (TextField) listOfControls.get(i);
-                                if (textField.getText().matches("[1-9]\\d*\\.?\\d+")) {
-                                    textField.setStyle("");
-                                } else {
-                                    textField.setStyle("-fx-border-color: red");
-                                    isCorrect = false;
-                                }
-                            }
-                            default -> {
-                                if (!checkValues(field.getType(), listOfLabels, listOfControls)) {
-                                    isCorrect = false;
-                                }
+                        } else {
+                            ComboBox comboBox = (ComboBox) listOfControls.get(i);
+                            if (comboBox.getValue() == null) {
+                                comboBox.setStyle("-fx-border-color: red");
+                                isCorrect = false;
+                            } else {
+                                comboBox.setStyle("");
                             }
                         }
                     }
