@@ -39,15 +39,13 @@ public class TextSerializer implements Serializer {
     }
 
     @Override
-    public ArrayList<Transport> deserialize(File file) {
+    public ArrayList<Transport> deserialize(File file) throws IOException {
         ArrayList<Transport> list = new ArrayList<>();
-        try (BufferedReader bufferedReader = new BufferedReader(new FileReader(file))) {
-            while (bufferedReader.ready()) {
-                list.add((Transport) textToObject(bufferedReader.readLine()));
-            }
-        } catch (IOException e) {
-            throw new RuntimeException(e);
+        BufferedReader bufferedReader = new BufferedReader(new FileReader(file));
+        while (bufferedReader.ready()) {
+            list.add((Transport) textToObject(bufferedReader.readLine()));
         }
+        bufferedReader.close();
 
         return list;
     }
