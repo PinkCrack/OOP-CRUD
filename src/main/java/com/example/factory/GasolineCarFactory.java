@@ -1,4 +1,4 @@
-package com.example.factories;
+package com.example.factory;
 
 import com.example.model.GasolineCar;
 import com.example.model.Transport;

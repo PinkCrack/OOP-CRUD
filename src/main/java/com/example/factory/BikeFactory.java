@@ -1,11 +1,7 @@
-package com.example.factories;
+package com.example.factory;
 
 import com.example.model.Bike;
 import com.example.model.Transport;
-import javafx.scene.control.Control;
-import javafx.scene.control.Label;
-
-import java.util.ArrayList;
 
 public class BikeFactory extends TransportFactory {
     @Override

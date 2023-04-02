@@ -1,4 +1,4 @@
-package com.example.factories;
+package com.example.factory;
 
 import com.example.annotation.EnumInformation;
 import com.example.annotation.GetMethod;

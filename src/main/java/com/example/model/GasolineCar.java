@@ -20,12 +20,12 @@ public class GasolineCar extends Car {
     }
 
     @GetMethod(name = "Вид бензина", returnType = "GasolineType")
-    public GasolineType getPetrolType() {
+    public GasolineType getGasolineType() {
         return gasolineType;
     }
 
     @SetMethod(name = "Вид бензина", typeParameter = "GasolineType")
-    public void setPetrolType(GasolineType gasolineType) {
+    public void setGasolineType(GasolineType gasolineType) {
         this.gasolineType = gasolineType;
     }
 }

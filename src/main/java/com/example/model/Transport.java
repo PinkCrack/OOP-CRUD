@@ -3,9 +3,20 @@ package com.example.model;
 import com.example.annotation.FieldInformation;
 import com.example.annotation.GetMethod;
 import com.example.annotation.SetMethod;
+import com.fasterxml.jackson.annotation.*;
 
 import java.io.Serializable;
 
+@JsonIdentityInfo(generator= ObjectIdGenerators.IntSequenceGenerator.class, property="@id")
+@JsonAutoDetect
+@JsonIgnoreProperties(ignoreUnknown = true)
+@JsonTypeInfo(use = JsonTypeInfo.Id.NAME,  property = "type")
+@JsonSubTypes({
+        @JsonSubTypes.Type(value = Bike.class, name = "Bike"),
+        @JsonSubTypes.Type(value = Bus.class, name = "Bus"),
+        @JsonSubTypes.Type(value = ElectricCar.class, name = "ElectricCar"),
+        @JsonSubTypes.Type(value = GasolineCar.class, name = "GasolineCar") }
+)
 public abstract class Transport implements Serializable {
     @FieldInformation(name = "Цвет", type = "TransportColor")
     private TransportColor color;

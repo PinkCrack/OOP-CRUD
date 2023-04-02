@@ -1,8 +1,7 @@
-package com.example.factories;
+package com.example.factory;
 
 import com.example.model.Bus;
 import com.example.model.Transport;
-import com.example.model.TransportColor;
 
 public class BusFactory extends TransportFactory {
     @Override
