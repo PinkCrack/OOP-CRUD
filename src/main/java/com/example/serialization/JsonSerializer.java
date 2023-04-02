@@ -36,14 +36,12 @@ public class JsonSerializer implements Serializer {
     }
 
     @Override
-    public ArrayList<Transport> deserialize(File file) {
+    public ArrayList<Transport> deserialize(File file) throws IOException {
         ArrayList<Transport> listOfTransport;
-        try (BufferedReader bufferedReader = new BufferedReader(new FileReader(file))) {
-            String json = bufferedReader.lines().collect(Collectors.joining());
-            listOfTransport = gson.fromJson(json, collectionType);
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
+        BufferedReader bufferedReader = new BufferedReader(new FileReader(file));
+        String json = bufferedReader.lines().collect(Collectors.joining());
+        listOfTransport = gson.fromJson(json, collectionType);
+        bufferedReader.close();
 
         return listOfTransport;
     }

@@ -16,13 +16,11 @@ public class BinarySerializer implements Serializer {
     }
 
     @Override
-    public ArrayList<Transport> deserialize(File file) {
+    public ArrayList<Transport> deserialize(File file) throws IOException, ClassNotFoundException {
         ArrayList<Transport> listOfTransport;
-        try (ObjectInputStream objectInputStream = new ObjectInputStream(new FileInputStream(file))) {
-            listOfTransport = (ArrayList<Transport>) objectInputStream.readObject();
-        } catch (IOException | ClassNotFoundException e) {
-            throw new RuntimeException(e);
-        }
+        ObjectInputStream objectInputStream = new ObjectInputStream(new FileInputStream(file));
+        listOfTransport = (ArrayList<Transport>) objectInputStream.readObject();
+        objectInputStream.close();
 
         return listOfTransport;
     }

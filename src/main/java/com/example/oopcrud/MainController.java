@@ -22,6 +22,7 @@ import javafx.scene.layout.VBox;
 import javafx.stage.FileChooser;
 
 import java.io.File;
+import java.io.IOException;
 import java.net.URL;
 import java.util.*;
 
@@ -153,13 +154,30 @@ public class MainController implements Initializable {
                 String[] substrings = openFile.getName().split("\\.");
                 SerializerFactory serializerFactory = serializerFactoryMap.get("." + substrings[substrings.length - 1]);
                 Serializer serializer = serializerFactory.createSerializer();
-                listOfTransport = serializer.deserialize(openFile);
-                tableList.clear();
-                if (listOfTransport != null) {
-                    for (Transport transport : listOfTransport) {
-                        tableList.add(new DataTransport(tableList.size() + 1, transport.getClass().getSimpleName(), transport.getVin()));
+
+                boolean isCorrect = true;
+                try {
+                    listOfTransport = serializer.deserialize(openFile);
+                } catch (IOException | ClassNotFoundException e) {
+                    Alert alert = new Alert(Alert.AlertType.ERROR);
+                    alert.setHeaderText("Ошибка!");
+                    alert.setContentText("Файл поврежден или не содержит список объектов");
+                    alert.show();
+                    isCorrect = false;
+                }
+                if (isCorrect) {
+                    tableList.clear();
+                    if (listOfTransport != null) {
+                        for (Transport transport : listOfTransport) {
+                            tableList.add(new DataTransport(tableList.size() + 1, transport.getClass().getSimpleName(), transport.getVin()));
+                        }
                     }
                 }
+            } else {
+                Alert alert = new Alert(Alert.AlertType.ERROR);
+                alert.setHeaderText("Ошибка формата!");
+                alert.setContentText("Файл не является (.txt, .bin или .json)");
+                alert.show();
             }
         }
     }
