@@ -1,8 +1,7 @@
 package com.example.oopcrud;
 
-import com.example.factories.*;
+import com.example.factory.*;
 import com.example.model.*;
-import com.example.serialization.BinarySerializer;
 import com.example.serialization.Serializer;
 import com.example.serialization.factory.BinarySerializerFactory;
 import com.example.serialization.factory.JsonSerializerFactory;
@@ -24,7 +23,10 @@ import javafx.stage.FileChooser;
 import java.io.File;
 import java.io.IOException;
 import java.net.URL;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Objects;
+import java.util.ResourceBundle;
 
 public class MainController implements Initializable {
 
@@ -191,7 +193,7 @@ public class MainController implements Initializable {
         File saveFile = fileChooser.showSaveDialog(content.getScene().getWindow());
         if (saveFile != null) {
             if (saveFile.getName().endsWith(BINARY_EXTENSION) || saveFile.getName().endsWith(JSON_EXTENSION)
-                        || saveFile.getName().endsWith(TEXT_EXTENSION)) {
+                    || saveFile.getName().endsWith(TEXT_EXTENSION)) {
 
                 String[] substrings = saveFile.getName().split("\\.");
                 SerializerFactory serializerFactory = serializerFactoryMap.get("." + substrings[substrings.length - 1]);

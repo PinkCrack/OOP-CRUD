@@ -1,18 +1,12 @@
 package com.example.oopcrud;
 
-import com.example.model.*;
-import com.example.serialization.JsonSerializer;
-import com.example.serialization.Serializer;
 import javafx.application.Application;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Scene;
-import javafx.scene.control.DialogPane;
 import javafx.scene.image.Image;
 import javafx.stage.Stage;
 
-import java.io.File;
 import java.io.IOException;
-import java.util.ArrayList;
 
 public class MainApplication extends Application {
     @Override
