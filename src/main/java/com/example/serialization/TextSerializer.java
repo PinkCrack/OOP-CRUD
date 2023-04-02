@@ -3,7 +3,7 @@ package com.example.serialization;
 import com.example.annotation.EnumInformation;
 import com.example.annotation.GetMethod;
 import com.example.annotation.SetMethod;
-import com.example.factories.*;
+import com.example.factory.*;
 import com.example.model.Transport;
 
 import java.io.*;
@@ -13,7 +13,7 @@ import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.HashMap;
 
-public class TextSerializer implements Serializer {
+public class TextSerializer extends Serializer {
 
     private final String BIKE = "Bike";
     private final String BUS = "Bus";

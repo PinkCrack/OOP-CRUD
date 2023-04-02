@@ -5,7 +5,7 @@ import com.example.model.Transport;
 import java.io.*;
 import java.util.ArrayList;
 
-public class BinarySerializer implements Serializer {
+public class BinarySerializer extends Serializer {
     @Override
     public void serialize(File file, ArrayList<Transport> listOfTransport) {
         try (ObjectOutputStream objectOutputStream = new ObjectOutputStream(new FileOutputStream(file))) {
