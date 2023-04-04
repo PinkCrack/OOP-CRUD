@@ -1,12 +1,14 @@
 package com.example.oopcrud;
 
-import com.example.factory.*;
+import com.example.factoryMethod.model.*;
 import com.example.model.*;
+import com.example.plugins.EncryptionPlugin;
+import com.example.plugins.ManagePlugins;
 import com.example.serialization.Serializer;
-import com.example.serialization.factory.BinarySerializerFactory;
-import com.example.serialization.factory.JsonSerializerFactory;
-import com.example.serialization.factory.SerializerFactory;
-import com.example.serialization.factory.TextSerializerFactory;
+import com.example.factoryMethod.serialization.BinarySerializerFactory;
+import com.example.factoryMethod.serialization.JsonSerializerFactory;
+import com.example.factoryMethod.serialization.SerializerFactory;
+import com.example.factoryMethod.serialization.TextSerializerFactory;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.event.ActionEvent;
@@ -20,13 +22,12 @@ import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
 import javafx.stage.FileChooser;
 
-import java.io.File;
-import java.io.IOException;
+import javax.crypto.BadPaddingException;
+import javax.crypto.IllegalBlockSizeException;
+import java.io.*;
 import java.net.URL;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.Objects;
-import java.util.ResourceBundle;
+import java.security.InvalidKeyException;
+import java.util.*;
 
 public class MainController implements Initializable {
 
@@ -56,6 +57,10 @@ public class MainController implements Initializable {
     private MenuBar menuBar;
     @FXML
     private TableView<DataTransport> transportTableView;
+    private AnchorPane encryptionPane = new AnchorPane();
+    private ComboBox<String> encryptionComboBox = new ComboBox<>();
+    private Button encryptionButton = new Button();
+    private Button cancelEncryptionButton = new Button("Отмена");
 
     private VBox content = new VBox();
     private HBox controlsHBox = new HBox();
@@ -70,6 +75,13 @@ public class MainController implements Initializable {
 
     private final double BUTTON_WIDTH = 110;
 
+    private final String PLUGINS_PACKAGE = "com.example.plugins";
+
+    private final String AES = "AES";
+    private final String BLOWFISH = "Blowfish";
+    private final ArrayList<String> ciphersList = new ArrayList<>();
+    private final ArrayList<String> extensionsList = new ArrayList<>();
+
     private final String BIKE = "Bike";
     private final String BUS = "Bus";
     private final String ELECTRIC_CAR = "ElectricCar";
@@ -79,11 +91,13 @@ public class MainController implements Initializable {
     private final String JSON_EXTENSION = ".json";
     private final String BINARY_EXTENSION = ".bin";
     private final String TEXT_EXTENSION = ".txt";
+    private final String AES_EXTENSION = ".aes";
+    private final String BLOWFISH_EXTENSION = ".blf";
     private final HashMap<String, SerializerFactory> serializerFactoryMap = new HashMap<>();
 
     private ArrayList<Transport> listOfTransport = new ArrayList<>();
-
-    private ObservableList<DataTransport> tableList = FXCollections.observableArrayList();
+    private final ObservableList<DataTransport> tableList = FXCollections.observableArrayList();
+    private File usedFile;
 
     @Override
     public void initialize(URL url, ResourceBundle resourceBundle) {
@@ -92,15 +106,18 @@ public class MainController implements Initializable {
         initializeSerializeFactoryMap();
         initializeControls();
         initializeScrollPane();
+        initializeEncryptionPane();
+        initializeExtensions();
         numberTableColumn.setCellValueFactory(new PropertyValueFactory<DataTransport, Integer>("number"));
         typeTabelColumn.setCellValueFactory(new PropertyValueFactory<DataTransport, String>("type"));
         vinTableColumn.setCellValueFactory(new PropertyValueFactory<DataTransport, String>("vin"));
         transportTableView.setItems(tableList);
+        mainPane.getChildren().add(encryptionPane);
         comboBox.getItems().addAll(BIKE, BUS, ELECTRIC_CAR, GASOLINE_CAR);
     }
 
     @FXML
-    private void onAddButtonClick(ActionEvent event) {
+    private void onAddButtonClick() {
         actionButton.setText("Создать");
         infoLabel.setText("Создание объекта");
         comboBox.setDisable(false);
@@ -110,7 +127,7 @@ public class MainController implements Initializable {
     }
 
     @FXML
-    private void onEditButtonClick(ActionEvent event) {
+    private void onEditButtonClick() {
         if (transportTableView.getSelectionModel().getSelectedItem() != null) {
             menuBar.setVisible(false);
             actionButton.setText("Редактировать");
@@ -134,7 +151,7 @@ public class MainController implements Initializable {
     }
 
     @FXML
-    private void onDeleteButtonClick(ActionEvent event) {
+    private void onDeleteButtonClick() {
         if (transportTableView.getSelectionModel().getSelectedItem() != null) {
             listOfTransport.remove(tableList.indexOf(transportTableView.getSelectionModel().getSelectedItem()));
             tableList.remove(transportTableView.getSelectionModel().getSelectedItem());
@@ -145,61 +162,53 @@ public class MainController implements Initializable {
     }
 
     @FXML
-    private void onOpenMenuItemClick(ActionEvent event) {
+    private void onOpenMenuItemClick() {
         FileChooser fileChooser = new FileChooser();
-        fileChooser.getExtensionFilters().add(new FileChooser.ExtensionFilter("Serializer's extensions (*.txt, *.json, *.bin)", "*.txt", "*.json", "*.bin"));
+        fileChooser.getExtensionFilters().add(new FileChooser.
+                ExtensionFilter("Serializer's extensions (*.txt, *.json, *.bin, *.aes, *.blf)",
+                "*.txt", "*.json", "*.bin", "*.aes", "*.blf"));
         File openFile = fileChooser.showOpenDialog(content.getScene().getWindow());
         if (openFile != null) {
-            if (openFile.getName().endsWith(BINARY_EXTENSION) || openFile.getName().endsWith(JSON_EXTENSION)
-                    || openFile.getName().endsWith(TEXT_EXTENSION)) {
-
-                String[] substrings = openFile.getName().split("\\.");
-                SerializerFactory serializerFactory = serializerFactoryMap.get("." + substrings[substrings.length - 1]);
-                Serializer serializer = serializerFactory.createSerializer();
-
-                boolean isCorrect = true;
-                try {
-                    listOfTransport = serializer.deserialize(openFile);
-                } catch (IOException | ClassNotFoundException e) {
-                    Alert alert = new Alert(Alert.AlertType.ERROR);
-                    alert.setHeaderText("Ошибка!");
-                    alert.setContentText("Файл поврежден или не содержит список объектов");
-                    alert.show();
-                    isCorrect = false;
-                }
-                if (isCorrect) {
-                    tableList.clear();
-                    if (listOfTransport != null) {
-                        for (Transport transport : listOfTransport) {
-                            tableList.add(new DataTransport(tableList.size() + 1, transport.getClass().getSimpleName(), transport.getVin()));
-                        }
-                    }
-                }
+            String[] extensions = openFile.getName().split("\\.");
+            String extension = "." + extensions[extensions.length - 1];
+            byte[] bytes = new byte[(int) openFile.length()];
+            if (extension.equals(BLOWFISH_EXTENSION) || extension.equals(AES_EXTENSION)) {
+                EncryptionPlugin encryptionPlugin = loadPlugin(ciphersList.get(extensionsList.indexOf(extension)));
+                bytes = decryptFile(encryptionPlugin, openFile);
+                extension = "." + extensions[extensions.length - 2];
             } else {
-                Alert alert = new Alert(Alert.AlertType.ERROR);
-                alert.setHeaderText("Ошибка формата!");
-                alert.setContentText("Файл не является (.txt, .bin или .json)");
-                alert.show();
+                try (FileInputStream fileInputStream = new FileInputStream(openFile)) {
+                    fileInputStream.read(bytes);
+                } catch (IOException e) {
+                    throw new RuntimeException(e);
+                }
+            }
+            if (extension.equals(BINARY_EXTENSION) || extension.equals(JSON_EXTENSION)
+                    || extension.equals(TEXT_EXTENSION)) {
+                deserializeFile(extension, bytes);
+            } else {
+                showError("Ошибка формата!", "Файл не является (.txt, .bin или .json)");
             }
         }
     }
 
     @FXML
-    private void onSaveMenuItemClick(ActionEvent event) {
-        FileChooser fileChooser = new FileChooser();
-        fileChooser.getExtensionFilters().add(new FileChooser.ExtensionFilter("Serializer's extension (*.txt)", "*.txt"));
-        fileChooser.getExtensionFilters().add(new FileChooser.ExtensionFilter("Serializer's extension (*.json)", "*.json"));
-        fileChooser.getExtensionFilters().add(new FileChooser.ExtensionFilter("Serializer's extension (*.bin)", "*.bin"));
-        File saveFile = fileChooser.showSaveDialog(content.getScene().getWindow());
-        if (saveFile != null) {
-            if (saveFile.getName().endsWith(BINARY_EXTENSION) || saveFile.getName().endsWith(JSON_EXTENSION)
-                    || saveFile.getName().endsWith(TEXT_EXTENSION)) {
-
-                String[] substrings = saveFile.getName().split("\\.");
-                SerializerFactory serializerFactory = serializerFactoryMap.get("." + substrings[substrings.length - 1]);
-                Serializer serializer = serializerFactory.createSerializer();
-                serializer.serialize(saveFile, listOfTransport);
+    private void onSaveMenuItemClick() {
+        if (!listOfTransport.isEmpty()) {
+            FileChooser fileChooser = new FileChooser();
+            fileChooser.getExtensionFilters().add(new FileChooser.ExtensionFilter("Serializer's extension (*.txt)", "*.txt"));
+            fileChooser.getExtensionFilters().add(new FileChooser.ExtensionFilter("Serializer's extension (*.json)", "*.json"));
+            fileChooser.getExtensionFilters().add(new FileChooser.ExtensionFilter("Serializer's extension (*.bin)", "*.bin"));
+            File saveFile = fileChooser.showSaveDialog(content.getScene().getWindow());
+            if (saveFile != null) {
+                if (saveFile.getName().endsWith(BINARY_EXTENSION) || saveFile.getName().endsWith(JSON_EXTENSION)
+                        || saveFile.getName().endsWith(TEXT_EXTENSION)) {
+                    usedFile = saveFile;
+                    showEncryptionPane();
+                }
             }
+        } else {
+            showError("Ошибка!", "Список объектов пуст!");
         }
     }
 
@@ -211,6 +220,13 @@ public class MainController implements Initializable {
             content.getChildren().set(content.getChildren().size() - 2, transportControls);
             actionButton.setVisible(true);
         }
+    }
+
+    private void showError(final String headerText ,final String text) {
+        Alert alert = new Alert(Alert.AlertType.ERROR);
+        alert.setHeaderText(headerText);
+        alert.setContentText(text);
+        alert.show();
     }
 
     private void actionButtonOnAction(ActionEvent event) {
@@ -248,6 +264,143 @@ public class MainController implements Initializable {
         controlsScrollPane.setVisible(false);
         content.getChildren().set(content.getChildren().size() - 2, controlsHBox);
         actionButton.setVisible(true);
+    }
+
+    private void encryptionComboBoxOnAction(ActionEvent event) {
+        if (!Objects.equals(encryptionComboBox.getValue(), "")) {
+            encryptionButton.setVisible(true);
+        }
+    }
+
+    private void encryptionButtonOnAction(ActionEvent event) {
+        EncryptionPlugin encryptionPlugin = loadPlugin(encryptionComboBox.getValue());
+        String[] substrings = usedFile.getName().split("\\.");
+        String extension = "." + substrings[substrings.length - 1];
+        File encryptFile = new File(usedFile.getAbsolutePath().concat(extensionsList.
+                get(ciphersList.indexOf(encryptionComboBox.getValue()))));
+
+        serializeFile(encryptFile, extension);
+        if (encryptionButton.getText().equals("Зашифровать")) {
+            encryptFile(encryptionPlugin, encryptFile);
+        }
+        encryptionComboBox.setValue("");
+        encryptionPane.setVisible(false);
+        menuBar.setVisible(true);
+        encryptionButton.setVisible(false);
+    }
+
+    private EncryptionPlugin loadPlugin(String type) {
+        Set<Class<? extends EncryptionPlugin>> plugins = ManagePlugins.getPluginClasses(PLUGINS_PACKAGE);
+        return ManagePlugins.createPlugin(plugins, type);
+    }
+
+    private void encryptFile(EncryptionPlugin encryptionPlugin, File file) {
+        byte[] bytes = new byte[(int) file.length()];
+        byte[] cipherBytes;
+        try (FileInputStream fileInputStream = new FileInputStream(file)) {
+            fileInputStream.read(bytes);
+            cipherBytes = encryptionPlugin.encrypt(bytes);
+        } catch (IOException | InvalidKeyException | IllegalBlockSizeException | BadPaddingException e) {
+            throw new RuntimeException(e);
+        }
+        try (FileOutputStream fileOutputStream = new FileOutputStream(file)) {
+            fileOutputStream.write(cipherBytes);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    private byte[] decryptFile(EncryptionPlugin encryptionPlugin, File file) {
+        byte[] bytes = new byte[(int) file.length()];
+        byte[] cipherBytes;
+        try (FileInputStream fileInputStream = new FileInputStream(file)) {
+            fileInputStream.read(bytes);
+            cipherBytes = encryptionPlugin.decrypt(bytes);
+        } catch (IOException | InvalidKeyException | IllegalBlockSizeException | BadPaddingException e) {
+            throw new RuntimeException(e);
+        }
+        return cipherBytes;
+    }
+
+    private void serializeFile(File file, String extension) {
+        SerializerFactory serializerFactory = serializerFactoryMap.get(extension);
+        Serializer serializer = serializerFactory.createSerializer();
+        serializer.serialize(file, listOfTransport);
+    }
+
+    private void deserializeFile(final String extension, final byte[] bytes) {
+        SerializerFactory serializerFactory = serializerFactoryMap.get(extension);
+        Serializer serializer = serializerFactory.createSerializer();
+
+        boolean isCorrect = true;
+        try {
+            listOfTransport = serializer.deserialize(bytes);
+        } catch (IOException | ClassNotFoundException e) {
+            showError("Ошибка!", "Файл поврежден или не содержит список объектов");
+            isCorrect = false;
+        }
+        if (isCorrect && listOfTransport != null) {
+            tableList.clear();
+            for (Transport transport : listOfTransport) {
+                tableList.add(new DataTransport(tableList.size() + 1,
+                        transport.getClass().getSimpleName(), transport.getVin()));
+            }
+        }
+    }
+
+    private void cancelEncryptButtonOnAction(ActionEvent event) {
+        String[] substrings = usedFile.getName().split("\\.");
+        String extension = "." + substrings[substrings.length - 1];
+        serializeFile(usedFile, extension);
+        encryptionComboBox.setValue("");
+        encryptionPane.setVisible(false);
+        menuBar.setVisible(true);
+        encryptionButton.setVisible(false);
+    }
+
+    private void showEncryptionPane() {
+        menuBar.setVisible(false);
+        encryptionPane.setVisible(true);
+    }
+
+    private void initializeExtensions() {
+        ciphersList.add(BLOWFISH);
+        ciphersList.add(AES);
+
+        extensionsList.add(BLOWFISH_EXTENSION);
+        extensionsList.add(AES_EXTENSION);
+    }
+
+    private void initializeEncryptionPane() {
+        encryptionPane.setStyle("-fx-background-color: #fafafa");
+        encryptionPane.toFront();
+        encryptionPane.setLayoutX(0);
+        encryptionPane.setLayoutY(0);
+        encryptionPane.setPrefHeight(PANE_HEIGHT);
+        encryptionPane.setPrefWidth(PANE_WIDTH);
+        encryptionPane.setVisible(false);
+        encryptionComboBox.getItems().addAll(AES, BLOWFISH);
+        encryptionButton.setPrefWidth(BUTTON_WIDTH);
+        encryptionButton.setVisible(false);
+        cancelEncryptionButton.setPrefWidth(BUTTON_WIDTH);
+        encryptionButton.setOnAction(this::encryptionButtonOnAction);
+        cancelEncryptionButton.setOnAction(this::cancelEncryptButtonOnAction);
+        encryptionComboBox.setOnAction(this::encryptionComboBoxOnAction);
+        encryptionButton.setText("Зашифровать");
+        HBox hBox = new HBox();
+        hBox.getChildren().addAll(encryptionButton, cancelEncryptionButton);
+        hBox.setSpacing(100);
+        hBox.setAlignment(Pos.CENTER);
+        Label label = new Label("Выбор плагина");
+        label.setStyle("-fx-font-weight: bold; -fx-font-size: 22px");
+        VBox vBox = new VBox();
+        vBox.getChildren().addAll(label, encryptionComboBox, hBox);
+        vBox.setSpacing(50);
+        vBox.setPrefWidth(PANE_WIDTH);
+        vBox.setAlignment(Pos.CENTER);
+        vBox.setStyle("-fx-padding: 50px 0 0 0");
+        encryptionPane.getChildren().add(vBox);
+
     }
 
     private void initializeTable() {
