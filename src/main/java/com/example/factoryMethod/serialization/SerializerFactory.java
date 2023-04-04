@@ -1,4 +1,4 @@
-package com.example.serialization.factory;
+package com.example.factoryMethod.serialization;
 
 import com.example.serialization.Serializer;
 

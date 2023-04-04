@@ -5,7 +5,7 @@ import com.example.model.Transport;
 import java.io.*;
 import java.util.ArrayList;
 
-public class BinarySerializer extends Serializer {
+public class BinarySerializer implements Serializer {
     @Override
     public void serialize(File file, ArrayList<Transport> listOfTransport) {
         try (ObjectOutputStream objectOutputStream = new ObjectOutputStream(new FileOutputStream(file))) {
@@ -16,13 +16,13 @@ public class BinarySerializer extends Serializer {
     }
 
     @Override
-    public ArrayList<Transport> deserialize(File file) throws IOException, ClassNotFoundException {
-        ArrayList<Transport> listOfTransport;
-        ObjectInputStream objectInputStream = new ObjectInputStream(new FileInputStream(file));
-        listOfTransport = (ArrayList<Transport>) objectInputStream.readObject();
-        objectInputStream.close();
+    public ArrayList<Transport> deserialize(final byte[] bytes) throws IOException, ClassNotFoundException {
+        ByteArrayInputStream in = new ByteArrayInputStream(bytes);
+        ObjectInputStream is = new ObjectInputStream(in);
+        Object object = is.readObject();
+        is.close();
+        in.close();
 
-        return listOfTransport;
+        return (ArrayList<Transport>) object;
     }
-
 }

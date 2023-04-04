@@ -2,15 +2,17 @@ package com.example.serialization;
 
 import com.example.model.*;
 import com.example.serialization.serializationModel.TransportSerializeModel;
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.ObjectWriter;
 
 import java.io.*;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.stream.Collectors;
 
-public class JsonSerializer extends Serializer {
+public class JsonSerializer implements Serializer {
 
     private final ObjectMapper objectMapper;
     private final ObjectWriter objectWriter;
@@ -31,13 +33,8 @@ public class JsonSerializer extends Serializer {
     }
 
     @Override
-    public ArrayList<Transport> deserialize(File file) throws IOException {
-        ArrayList<Transport> listOfTransport;
-        BufferedReader bufferedReader = new BufferedReader(new FileReader(file));
-        String json = bufferedReader.lines().collect(Collectors.joining());
-        listOfTransport = objectMapper.readValue(json, type);
-        bufferedReader.close();
-
-        return listOfTransport;
+    public ArrayList<Transport> deserialize(final byte[] bytes) throws IOException {
+        String json = new String(bytes) ;
+        return objectMapper.readValue(json, type);
     }
 }

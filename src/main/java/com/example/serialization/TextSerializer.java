@@ -3,23 +3,24 @@ package com.example.serialization;
 import com.example.annotation.EnumInformation;
 import com.example.annotation.GetMethod;
 import com.example.annotation.SetMethod;
-import com.example.factory.*;
+import com.example.factoryMethod.model.*;
 import com.example.model.Transport;
 
 import java.io.*;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.HashMap;
 
-public class TextSerializer extends Serializer {
+public class TextSerializer implements Serializer {
 
     private final String BIKE = "Bike";
     private final String BUS = "Bus";
     private final String ELECTRIC_CAR = "ElectricCar";
     private final String GASOLINE_CAR = "GasolineCar";
-    private final String BATTERY = "Battery";
+
     private final HashMap<String, TransportFactory> transportFactoryMap = new HashMap<>();
 
     public TextSerializer() {
@@ -39,13 +40,13 @@ public class TextSerializer extends Serializer {
     }
 
     @Override
-    public ArrayList<Transport> deserialize(File file) throws IOException {
+    public ArrayList<Transport> deserialize(final byte[] bytes) throws IOException {
         ArrayList<Transport> list = new ArrayList<>();
-        BufferedReader bufferedReader = new BufferedReader(new FileReader(file));
-        while (bufferedReader.ready()) {
-            list.add((Transport) textToObject(bufferedReader.readLine()));
+
+        String[] objects = (new String(bytes).split("\n"));
+        for (String object : objects) {
+            list.add((Transport) textToObject(object));
         }
-        bufferedReader.close();
 
         return list;
     }
@@ -64,10 +65,13 @@ public class TextSerializer extends Serializer {
         return stringBuilder.toString();
     }
 
-    private Object textToObject(String str) {
+    private Object textToObject(String str) throws IOException {
         HashMap<String, String> valuesMap = textToMap(str);
 
         TransportFactory transportFactory = transportFactoryMap.get(valuesMap.get("Класс"));
+        if (transportFactory == null) {
+            throw new IOException();
+        }
         Object object = transportFactory.createTransport();
         try {
             setValuesToObject(object.getClass(), object, valuesMap);
@@ -78,7 +82,7 @@ public class TextSerializer extends Serializer {
         return object;
     }
 
-    private HashMap<String, String> textToMap(String str) {
+    private HashMap<String, String> textToMap(String str) throws IOException {
         HashMap<String, String> valuesMap = new HashMap<>();
         char[] chars = str.toCharArray();
         String name = "";
@@ -95,7 +99,11 @@ public class TextSerializer extends Serializer {
                 if (i == chars.length || chars[i] == ';') {
                     value = str.substring(valueIndex, i);
                     nameIndex = i + 1;
-                    valuesMap.put(name, value);
+                    if (!valuesMap.containsKey(name)) {
+                        valuesMap.put(name, value);
+                    } else {
+                        throw new IOException();
+                    }
                 }
             }
             if (i < chars.length) {
@@ -110,7 +118,7 @@ public class TextSerializer extends Serializer {
     }
 
     private void setValuesToObject(Class<?> usedClass, Object transport, HashMap<String, String> valuesMap)
-            throws InvocationTargetException, IllegalAccessException, NoSuchMethodException, InstantiationException {
+            throws InvocationTargetException, IllegalAccessException, NoSuchMethodException, InstantiationException, IOException {
         Method[] methods = usedClass.getMethods();
         SetMethod setMethod;
         ArrayList<String> names = new ArrayList<>(valuesMap.keySet());
