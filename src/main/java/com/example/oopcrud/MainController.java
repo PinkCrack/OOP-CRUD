@@ -1,14 +1,11 @@
 package com.example.oopcrud;
 
 import com.example.factoryMethod.model.*;
+import com.example.factoryMethod.serialization.*;
 import com.example.model.*;
 import com.example.plugins.EncryptionPlugin;
 import com.example.plugins.ManagePlugins;
 import com.example.serialization.Serializer;
-import com.example.factoryMethod.serialization.BinarySerializerFactory;
-import com.example.factoryMethod.serialization.JsonSerializerFactory;
-import com.example.factoryMethod.serialization.SerializerFactory;
-import com.example.factoryMethod.serialization.TextSerializerFactory;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.event.ActionEvent;
@@ -163,16 +160,14 @@ public class MainController implements Initializable {
 
     @FXML
     private void onOpenMenuItemClick() {
-        FileChooser fileChooser = new FileChooser();
-        fileChooser.getExtensionFilters().add(new FileChooser.
-                ExtensionFilter("Serializer's extensions (*.txt, *.json, *.bin, *.aes, *.blf)",
-                "*.txt", "*.json", "*.bin", "*.aes", "*.blf"));
+        CustomFileChooser customFileChooser = new CustomFileChooser();
+        FileChooser fileChooser = customFileChooser.createOpenFileChooser();
         File openFile = fileChooser.showOpenDialog(content.getScene().getWindow());
         if (openFile != null) {
             String[] extensions = openFile.getName().split("\\.");
             String extension = "." + extensions[extensions.length - 1];
             byte[] bytes = new byte[(int) openFile.length()];
-            if (extension.equals(BLOWFISH_EXTENSION) || extension.equals(AES_EXTENSION)) {
+            if (customFileChooser.isContainsExtensionsPlugin(extension)) {
                 EncryptionPlugin encryptionPlugin = loadPlugin(ciphersList.get(extensionsList.indexOf(extension)));
                 bytes = decryptFile(encryptionPlugin, openFile);
                 extension = "." + extensions[extensions.length - 2];
@@ -183,8 +178,7 @@ public class MainController implements Initializable {
                     throw new RuntimeException(e);
                 }
             }
-            if (extension.equals(BINARY_EXTENSION) || extension.equals(JSON_EXTENSION)
-                    || extension.equals(TEXT_EXTENSION)) {
+            if (customFileChooser.isContainsExtensionsSerializer(extension)) {
                 deserializeFile(extension, bytes);
             } else {
                 showError("Ошибка формата!", "Файл не является (.txt, .bin или .json)");
@@ -195,14 +189,12 @@ public class MainController implements Initializable {
     @FXML
     private void onSaveMenuItemClick() {
         if (!listOfTransport.isEmpty()) {
-            FileChooser fileChooser = new FileChooser();
-            fileChooser.getExtensionFilters().add(new FileChooser.ExtensionFilter("Serializer's extension (*.txt)", "*.txt"));
-            fileChooser.getExtensionFilters().add(new FileChooser.ExtensionFilter("Serializer's extension (*.json)", "*.json"));
-            fileChooser.getExtensionFilters().add(new FileChooser.ExtensionFilter("Serializer's extension (*.bin)", "*.bin"));
+            CustomFileChooser customFileChooser = new CustomFileChooser();
+            FileChooser fileChooser = customFileChooser.createSaveFileChooser();
             File saveFile = fileChooser.showSaveDialog(content.getScene().getWindow());
             if (saveFile != null) {
-                if (saveFile.getName().endsWith(BINARY_EXTENSION) || saveFile.getName().endsWith(JSON_EXTENSION)
-                        || saveFile.getName().endsWith(TEXT_EXTENSION)) {
+                String[] str = saveFile.getName().split("\\.");
+                if (customFileChooser.isContainsExtensionsSerializer(".".concat(str[str.length - 1]))) {
                     usedFile = saveFile;
                     showEncryptionPane();
                 }
@@ -407,7 +399,7 @@ public class MainController implements Initializable {
         Transport transport = new Bike(TransportColor.BLACK, 2, 1, "GJJ31BGDK32", 33, BikeType.MOUNTAIN);
         listOfTransport.add(transport);
         tableList.add(new DataTransport(tableList.size() + 1, transport.getClass().getSimpleName(), transport.getVin()));
-        transport = new ElectricCar(TransportColor.GREEN, 4, 4, "B74ODSW43TKSL43", CarBody.HATCHBACK, new Battery(100, 2000));
+        transport = new ElectricCar(TransportColor.GREEN, 4, 4, "fdfg\"sdf\"dfsdf", CarBody.HATCHBACK, new Battery(100, 2000));
         listOfTransport.add(transport);
         tableList.add(new DataTransport(tableList.size() + 1, transport.getClass().getSimpleName(), transport.getVin()));
         transport = new Bus(TransportColor.RED, 6, 28, "NFD34K2DK23", 32);
