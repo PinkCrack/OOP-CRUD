@@ -8,6 +8,7 @@ import com.fasterxml.jackson.annotation.JsonIdentityInfo;
 import com.fasterxml.jackson.annotation.ObjectIdGenerators;
 
 import java.io.Serializable;
+import java.util.Objects;
 
 @JsonIdentityInfo(generator= ObjectIdGenerators.IntSequenceGenerator.class, property="@id")
 @JsonAutoDetect
@@ -45,5 +46,17 @@ public class Battery implements Serializable {
     @SetMethod(name = "Объем", typeParameter = "Integer")
     public void setCapacity(int capacity) {
         this.capacity = capacity;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (!(o instanceof Battery battery)) return false;
+        return getEnergyConsumption() == battery.getEnergyConsumption() && getCapacity() == battery.getCapacity();
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(getEnergyConsumption(), getCapacity());
     }
 }

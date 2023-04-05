@@ -6,6 +6,7 @@ import com.example.annotation.SetMethod;
 import com.fasterxml.jackson.annotation.*;
 
 import java.io.Serializable;
+import java.util.Objects;
 
 @JsonIdentityInfo(generator= ObjectIdGenerators.IntSequenceGenerator.class, property="@id")
 @JsonAutoDetect
@@ -76,5 +77,18 @@ public abstract class Transport implements Serializable {
     @SetMethod(name = "Количество мест", typeParameter = "Integer")
     public void setAmountOfSeats(int amountOfSeats) {
         this.amountOfSeats = amountOfSeats;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (!(o instanceof Transport transport)) return false;
+        return getAmountOfWheels() == transport.getAmountOfWheels() && getAmountOfSeats() == transport.getAmountOfSeats()
+                && getColor() == transport.getColor() && getVin().equals(transport.getVin());
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(getColor(), getAmountOfWheels(), getAmountOfSeats(), getVin());
     }
 }

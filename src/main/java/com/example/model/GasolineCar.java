@@ -4,6 +4,8 @@ import com.example.annotation.FieldInformation;
 import com.example.annotation.GetMethod;
 import com.example.annotation.SetMethod;
 
+import java.util.Objects;
+
 public class GasolineCar extends Car {
     @FieldInformation(name = "Вид бензина", type = "GasolineType")
     private GasolineType gasolineType;
@@ -27,5 +29,18 @@ public class GasolineCar extends Car {
     @SetMethod(name = "Вид бензина", typeParameter = "GasolineType")
     public void setGasolineType(GasolineType gasolineType) {
         this.gasolineType = gasolineType;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (!(o instanceof GasolineCar that)) return false;
+        if (!super.equals(o)) return false;
+        return getGasolineType() == that.getGasolineType();
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(super.hashCode(), getGasolineType());
     }
 }

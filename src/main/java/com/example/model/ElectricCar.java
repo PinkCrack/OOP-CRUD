@@ -4,6 +4,8 @@ import com.example.annotation.FieldInformation;
 import com.example.annotation.GetMethod;
 import com.example.annotation.SetMethod;
 
+import java.util.Objects;
+
 public class ElectricCar extends Car {
     @FieldInformation(name = "Батарея", type = "Battery")
     private Battery battery;
@@ -27,5 +29,18 @@ public class ElectricCar extends Car {
     @SetMethod(name = "Батарея", typeParameter = "Battery")
     public void setBattery(Battery battery) {
         this.battery = battery;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (!(o instanceof ElectricCar that)) return false;
+        if (!super.equals(o)) return false;
+        return Objects.equals(getBattery(), that.getBattery());
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(super.hashCode(), getBattery());
     }
 }
