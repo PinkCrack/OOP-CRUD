@@ -13,6 +13,7 @@ import java.lang.reflect.Method;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.regex.Pattern;
 
 public class TextSerializer implements Serializer {
 
@@ -90,8 +91,9 @@ public class TextSerializer implements Serializer {
         int nameIndex = 0;
         int valueIndex = 0;
         boolean isInnerObject = false;
+        boolean isStr = false;
         for (int i = 0; i < chars.length + 1; i++) {
-            if (!isInnerObject) {
+            if (!isInnerObject && !isStr) {
                 if (i < chars.length && chars[i] == ':') {
                     name = str.substring(nameIndex, i);
                     valueIndex = i + 1;
@@ -106,11 +108,18 @@ public class TextSerializer implements Serializer {
                     }
                 }
             }
-            if (i < chars.length) {
-                if (chars[i] == '[') {
-                    isInnerObject = true;
-                } else if (chars[i] == ']') {
-                    isInnerObject = false;
+            if (i > 0 && i < chars.length) {
+                if (!isStr && chars[i] == '"') {
+                    isStr = true;
+                } else if (chars[i] == '"' && chars[i - 1] != '\\') {
+                    isStr = false;
+                }
+                if (!isStr) {
+                    if (chars[i] == '[') {
+                        isInnerObject = true;
+                    } else if (chars[i] == ']') {
+                        isInnerObject = false;
+                    }
                 }
             }
         }
@@ -133,7 +142,9 @@ public class TextSerializer implements Serializer {
                                 method.invoke(transport, Integer.parseInt(valuesMap.get(name)));
                             }
                             case "String" -> {
-                                method.invoke(transport, valuesMap.get(name));
+                                String str = valuesMap.get(name);
+                                str = str.replaceAll("\\\\\"", "\"");
+                                method.invoke(transport, str.substring(1, str.length() - 1));
                             }
                             case "Double" -> {
                                 method.invoke(transport, Double.parseDouble(valuesMap.get(name)));
@@ -187,8 +198,13 @@ public class TextSerializer implements Serializer {
                     }
                 } else {
                     switch (getMethod.returnType()) {
-                        case "String", "Integer", "Double", "Boolean" -> {
+                        case "Integer", "Double", "Boolean" -> {
                             stringBuilder.append(method.invoke(object));
+                        }
+                        case "String" -> {
+                            String str = (String) method.invoke(object);
+                            str = str.replaceAll("\"", "\\\\\"");
+                            stringBuilder.append("\"").append(str).append("\"");
                         }
                         default -> {
                             Object innerObject = method.invoke(object);
