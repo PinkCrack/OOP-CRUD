@@ -72,7 +72,7 @@ public class MainController implements Initializable {
 
     private final double BUTTON_WIDTH = 110;
 
-    private final String PLUGINS_PACKAGE = "com.example.plugins";
+    private final String PLUGINS_PACKAGE = "C:\\Users\\Nikita\\IdeaProjects\\OOP-CRUD\\target\\classes\\com\\example\\plugins";
 
     private final String AES = "AES";
     private final String BLOWFISH = "Blowfish";
@@ -282,7 +282,12 @@ public class MainController implements Initializable {
     }
 
     private EncryptionPlugin loadPlugin(String type) {
-        Set<Class<? extends EncryptionPlugin>> plugins = ManagePlugins.getPluginClasses(PLUGINS_PACKAGE);
+        ArrayList<Class<? extends EncryptionPlugin>> plugins = null;
+        try {
+            plugins = ManagePlugins.loadCipherPlugins(PLUGINS_PACKAGE);
+        } catch (IOException | ClassNotFoundException e) {
+            throw new RuntimeException(e);
+        }
         return ManagePlugins.createPlugin(plugins, type);
     }
 
