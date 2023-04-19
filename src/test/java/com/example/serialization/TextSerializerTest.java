@@ -20,7 +20,8 @@ class TextSerializerTest {
         textSerializer = new TextSerializer();
         listOfTransport.add(new Bike(TransportColor.RED, 2,1, "JSDF323", 33, BikeType.BMX));
         listOfTransport.add(new Bus(TransportColor.BLACK, 6,22, "JSDFS322ASD23", 303));
-        listOfTransport.add(new ElectricCar(TransportColor.GREEN, 4,5, "TESLA323", CarBody.SEDAN, new Battery(120,330)));
+        listOfTransport.add(new ElectricCar(TransportColor.GREEN, 4,5, "TESLA323", CarBody.SEDAN,
+                new Battery(120,330)));
         listOfTransport.add(new GasolineCar(TransportColor.WHITE, 4,4, "TATO32DDD323", CarBody.HATCHBACK, GasolineType.PREMIUM98));
     }
 
