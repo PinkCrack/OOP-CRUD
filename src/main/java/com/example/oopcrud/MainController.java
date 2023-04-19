@@ -72,7 +72,7 @@ public class MainController implements Initializable {
 
     private final double BUTTON_WIDTH = 110;
 
-    private final String PLUGINS_PACKAGE = "C:\\Users\\Nikita\\IdeaProjects\\OOP-CRUD\\target\\classes\\com\\example\\plugins";
+    private final String PLUGINS_PACKAGE = "com.example.plugins";
 
     private final String AES = "AES";
     private final String BLOWFISH = "Blowfish";
@@ -83,7 +83,11 @@ public class MainController implements Initializable {
     private final String BUS = "Bus";
     private final String ELECTRIC_CAR = "ElectricCar";
     private final String GASOLINE_CAR = "GasolineCar";
-    private final HashMap<String, TransportFactory> transportFactoryMap = new HashMap<>();
+    private final Map<String, TransportFactory> transportFactoryMap = Map.ofEntries(
+            Map.entry("Bike", new BikeFactory()),
+            Map.entry("Bus", new BusFactory()),
+            Map.entry("ElectricCar", new ElectricCarFactory()),
+            Map.entry("GasolineCar", new GasolineCarFactory()));
 
     private final String JSON_EXTENSION = ".json";
     private final String BINARY_EXTENSION = ".bin";
@@ -96,10 +100,12 @@ public class MainController implements Initializable {
     private final ObservableList<DataTransport> tableList = FXCollections.observableArrayList();
     private File usedFile;
 
+    private ArrayList<EncryptionPlugin> plugins;
+
     @Override
     public void initialize(URL url, ResourceBundle resourceBundle) {
+        plugins = ManagePlugins.createPlugins(loadPlugins());
         initializeTable();
-        initializeTransportFactoryMap();
         initializeSerializeFactoryMap();
         initializeControls();
         initializeScrollPane();
@@ -160,7 +166,7 @@ public class MainController implements Initializable {
 
     @FXML
     private void onOpenMenuItemClick() {
-        CustomFileChooser customFileChooser = new CustomFileChooser();
+        CustomFileChooser customFileChooser = new CustomFileChooser(plugins);
         FileChooser fileChooser = customFileChooser.createOpenFileChooser();
         File openFile = fileChooser.showOpenDialog(content.getScene().getWindow());
         if (openFile != null) {
@@ -189,7 +195,7 @@ public class MainController implements Initializable {
     @FXML
     private void onSaveMenuItemClick() {
         if (!listOfTransport.isEmpty()) {
-            CustomFileChooser customFileChooser = new CustomFileChooser();
+            CustomFileChooser customFileChooser = new CustomFileChooser(plugins);
             FileChooser fileChooser = customFileChooser.createSaveFileChooser();
             File saveFile = fileChooser.showSaveDialog(content.getScene().getWindow());
             if (saveFile != null) {
@@ -281,13 +287,13 @@ public class MainController implements Initializable {
         encryptionButton.setVisible(false);
     }
 
+    private ArrayList<Class<? extends EncryptionPlugin>> loadPlugins() {
+        return new ArrayList<>(ManagePlugins.getPluginClasses(PLUGINS_PACKAGE));
+    }
+
     private EncryptionPlugin loadPlugin(String type) {
-        ArrayList<Class<? extends EncryptionPlugin>> plugins = null;
-        try {
-            plugins = ManagePlugins.loadCipherPlugins(PLUGINS_PACKAGE);
-        } catch (IOException | ClassNotFoundException e) {
-            throw new RuntimeException(e);
-        }
+        ArrayList<Class<? extends EncryptionPlugin>> plugins =
+                new ArrayList<>(ManagePlugins.getPluginClasses(PLUGINS_PACKAGE));
         return ManagePlugins.createPlugin(plugins, type);
     }
 
@@ -441,18 +447,15 @@ public class MainController implements Initializable {
         serializerFactoryMap.put(TEXT_EXTENSION, new TextSerializerFactory());
     }
 
-    private void initializeTransportFactoryMap() {
-        transportFactoryMap.put(BIKE, new BikeFactory());
-        transportFactoryMap.put(BUS, new BusFactory());
-        transportFactoryMap.put(ELECTRIC_CAR, new ElectricCarFactory());
-        transportFactoryMap.put(GASOLINE_CAR, new GasolineCarFactory());
-    }
-
     private void initializeScrollPane() {
         controlsScrollPane.setLayoutX(0);
         controlsScrollPane.setLayoutY(0);
         controlsScrollPane.setContent(content);
         controlsScrollPane.setPrefHeight(PANE_HEIGHT);
         controlsScrollPane.setPrefWidth(PANE_WIDTH);
+    }
+
+    public Map<String, TransportFactory> getTransportFactoryMap() {
+        return transportFactoryMap;
     }
 }

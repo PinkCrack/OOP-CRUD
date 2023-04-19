@@ -12,7 +12,6 @@ public class GasolineCar extends Car {
 
     public GasolineCar(final TransportColor color, final int amountOfWheels, final int amountOfSeats, final String vin,
                        final CarBody typeOfBody, final GasolineType gasolineType) {
-
         super(color, amountOfWheels, amountOfSeats, vin, typeOfBody);
         this.gasolineType = gasolineType;
     }

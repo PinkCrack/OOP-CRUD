@@ -3,16 +3,10 @@ package com.example.model;
 import com.example.annotation.FieldInformation;
 import com.example.annotation.GetMethod;
 import com.example.annotation.SetMethod;
-import com.fasterxml.jackson.annotation.JsonAutoDetect;
-import com.fasterxml.jackson.annotation.JsonIdentityInfo;
-import com.fasterxml.jackson.annotation.ObjectIdGenerators;
 
-import java.io.Serializable;
 import java.util.Objects;
 
-@JsonIdentityInfo(generator= ObjectIdGenerators.IntSequenceGenerator.class, property="@id")
-@JsonAutoDetect
-public class Battery implements Serializable {
+public class Battery {
     @FieldInformation(name = "Потребление энергии", type = "Integer")
     private int energyConsumption;
 
