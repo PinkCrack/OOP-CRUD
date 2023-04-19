@@ -1,7 +1,9 @@
 package com.example.plugins;
 
-import java.util.Set;
 import org.reflections.Reflections;
+
+import java.util.ArrayList;
+import java.util.Set;
 
 public class ManagePlugins {
     public static Set<Class<? extends EncryptionPlugin>> getPluginClasses(String packageName) {
@@ -9,7 +11,21 @@ public class ManagePlugins {
         return reflections.getSubTypesOf(EncryptionPlugin.class);
     }
 
-    public static EncryptionPlugin createPlugin(Set<Class<? extends EncryptionPlugin>> plugins, final String name) {
+    public static ArrayList<EncryptionPlugin> createPlugins(ArrayList<Class<? extends EncryptionPlugin>> plugins) {
+        ArrayList<EncryptionPlugin> pluginsList = new ArrayList<>();
+        EncryptionPlugin plugin = null;
+        for (Class<? extends EncryptionPlugin> clazz : plugins) {
+            try {
+                plugin = clazz.newInstance();
+                pluginsList.add(plugin);
+            } catch (InstantiationException | IllegalAccessException e) {
+                e.printStackTrace();
+            }
+        }
+        return pluginsList;
+    }
+
+    public static EncryptionPlugin createPlugin(ArrayList<Class<? extends EncryptionPlugin>> plugins, final String name) {
         EncryptionPlugin plugin = null;
         for (Class<? extends EncryptionPlugin> clazz : plugins) {
             try {
