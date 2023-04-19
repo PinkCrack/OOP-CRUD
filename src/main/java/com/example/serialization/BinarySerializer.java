@@ -6,6 +6,7 @@ import java.io.*;
 import java.util.ArrayList;
 
 public class BinarySerializer implements Serializer {
+    private final String extension = ".bin";
     @Override
     public void serialize(File file, ArrayList<Transport> listOfTransport) {
         try (ObjectOutputStream objectOutputStream = new ObjectOutputStream(new FileOutputStream(file))) {
@@ -24,5 +25,10 @@ public class BinarySerializer implements Serializer {
         in.close();
 
         return (ArrayList<Transport>) object;
+    }
+
+    @Override
+    public String getExtension() {
+        return extension;
     }
 }

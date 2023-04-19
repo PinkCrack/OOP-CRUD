@@ -1,31 +1,37 @@
 package com.example.serialization;
 
 import com.example.model.*;
-import com.example.serialization.serializationModel.TransportSerializeModel;
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.ObjectWriter;
+import com.google.gson.*;
+import com.google.gson.reflect.TypeToken;
+import com.google.gson.typeadapters.RuntimeTypeAdapterFactory;
 
 import java.io.*;
-import java.nio.charset.StandardCharsets;
+import java.lang.reflect.Type;
 import java.util.ArrayList;
-import java.util.stream.Collectors;
+import java.util.Collection;
 
 public class JsonSerializer implements Serializer {
 
-    private final ObjectMapper objectMapper;
-    private final ObjectWriter objectWriter;
-    private final TypeReference<ArrayList<Transport>> type = new TypeReference<ArrayList<Transport>>() {};
+    private final String extension = ".json";
+
+    private final Type collectionType = new TypeToken<Collection<Transport>>() {
+    }.getType();
+    private final Gson gson;
+
     public JsonSerializer()  {
-        objectMapper = new ObjectMapper();
-        objectWriter = objectMapper.writerFor(type);
+        RuntimeTypeAdapterFactory<Transport> vehicleAdapterFactory = RuntimeTypeAdapterFactory.of(Transport.class, "type")
+                .registerSubtype(Bike.class, "Bike")
+                .registerSubtype(Bus.class, "Bus")
+                .registerSubtype(GasolineCar.class, "GasolineCar")
+                .registerSubtype(ElectricCar.class, "ElectricCar");
+
+        gson = new GsonBuilder().registerTypeAdapterFactory(vehicleAdapterFactory).create();
     }
 
     @Override
     public void serialize(File file, ArrayList<Transport> listOfTransport) {
         try (BufferedWriter bufferedWriter = new BufferedWriter(new FileWriter(file))) {
-            String json = objectWriter.writeValueAsString(listOfTransport);
+            String json = gson.toJson(listOfTransport, collectionType);
             bufferedWriter.write(json);
         } catch (IOException e) {
             throw new RuntimeException(e);
@@ -35,6 +41,11 @@ public class JsonSerializer implements Serializer {
     @Override
     public ArrayList<Transport> deserialize(final byte[] bytes) throws IOException {
         String json = new String(bytes) ;
-        return objectMapper.readValue(json, type);
+        return gson.fromJson(json, collectionType);
+    }
+
+    @Override
+    public String getExtension() {
+        return extension;
     }
 }

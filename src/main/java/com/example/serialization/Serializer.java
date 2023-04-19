@@ -9,4 +9,5 @@ import java.util.ArrayList;
 public interface Serializer {
     void serialize(File file, ArrayList<Transport> list);
     ArrayList<Transport> deserialize(final byte[] bytes) throws IOException, ClassNotFoundException;
+    String getExtension();
 }

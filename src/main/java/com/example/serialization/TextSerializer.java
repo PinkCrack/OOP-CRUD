@@ -5,6 +5,7 @@ import com.example.annotation.GetMethod;
 import com.example.annotation.SetMethod;
 import com.example.factoryMethod.model.*;
 import com.example.model.Transport;
+import com.example.oopcrud.MainController;
 
 import java.io.*;
 import java.lang.reflect.Field;
@@ -12,21 +13,16 @@ import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.Map;
 
 public class TextSerializer implements Serializer {
+    private final String extension = ".txt";
 
-    private final String BIKE = "Bike";
-    private final String BUS = "Bus";
-    private final String ELECTRIC_CAR = "ElectricCar";
-    private final String GASOLINE_CAR = "GasolineCar";
-
-    private final HashMap<String, TransportFactory> transportFactoryMap = new HashMap<>();
+    private final Map<String, TransportFactory> transportFactoryMap;
 
     public TextSerializer() {
-        transportFactoryMap.put(BIKE, new BikeFactory());
-        transportFactoryMap.put(BUS, new BusFactory());
-        transportFactoryMap.put(ELECTRIC_CAR, new ElectricCarFactory());
-        transportFactoryMap.put(GASOLINE_CAR, new GasolineCarFactory());
+        MainController mainController = new MainController();
+        transportFactoryMap = mainController.getTransportFactoryMap();
     }
 
     @Override
@@ -48,6 +44,11 @@ public class TextSerializer implements Serializer {
         }
 
         return list;
+    }
+
+    @Override
+    public String getExtension() {
+        return extension;
     }
 
     private String listToText(ArrayList<Transport> list) {
@@ -109,7 +110,7 @@ public class TextSerializer implements Serializer {
             if (i > 0 && i < chars.length) {
                 if (!isStr && chars[i] == '"') {
                     isStr = true;
-                } else if (chars[i] == '"' && chars[i - 1] != '\\') {
+                } else if (chars[i] == '"' && i - 1 < chars.length && chars[i + 1] == ';') {
                     isStr = false;
                 }
                 if (!isStr) {
@@ -141,8 +142,10 @@ public class TextSerializer implements Serializer {
                             }
                             case "String" -> {
                                 String str = valuesMap.get(name);
+                                str = str.substring(1, str.length() - 1);
                                 str = str.replaceAll("\\\\\"", "\"");
-                                method.invoke(transport, str.substring(1, str.length() - 1));
+                                str = str.replaceAll("\\\\;", ";");
+                                method.invoke(transport, str);
                             }
                             case "Double" -> {
                                 method.invoke(transport, Double.parseDouble(valuesMap.get(name)));
@@ -169,8 +172,12 @@ public class TextSerializer implements Serializer {
                             }
                         }
                     }
+                    valuesMap.remove(name);
                 }
             }
+        }
+        if (valuesMap.size() != 1) {
+            throw new IOException();
         }
     }
 
@@ -202,6 +209,7 @@ public class TextSerializer implements Serializer {
                         case "String" -> {
                             String str = (String) method.invoke(object);
                             str = str.replaceAll("\"", "\\\\\"");
+                            str = str.replaceAll(";", "\\\\;");
                             stringBuilder.append("\"").append(str).append("\"");
                         }
                         default -> {
