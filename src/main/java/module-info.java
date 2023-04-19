@@ -6,9 +6,10 @@ module com.example.oopcrud {
     requires com.fasterxml.jackson.databind;
     requires java.xml.bind;
     requires org.reflections;
+    requires com.google.gson;
+    requires gson.extras;
 
-
+    opens com.example.model to com.google.gson, com.fasterxml.jackson.databind;
     opens com.example.oopcrud to javafx.fxml;
-    opens com.example.model to com.fasterxml.jackson.databind;
     exports com.example.oopcrud;
 }
